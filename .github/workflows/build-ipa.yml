@@ -7,15 +7,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-      - name: Check tools
-        run: |
-          which actool
-          actool --version
       - name: Extract base IPA
         run: |
           rm -rf /tmp/ipa && mkdir /tmp/ipa
           cd /tmp/ipa && unzip -q $GITHUB_WORKSPACE/base.ipa
-          ls /tmp/ipa/Payload/App.app
       - name: Replace web app
         run: |
           rm -rf /tmp/ipa/Payload/App.app/public
@@ -25,25 +20,30 @@ jobs:
           cd /tmp/ipa/Payload/App.app
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Ma tournée" Info.plist || true
           /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier be.vbrenaissance.matournee" Info.plist || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIconName AppIcon" Info.plist || /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string AppIcon" Info.plist
       - name: Compile Assets.car
         run: |
           rm -rf /tmp/compiled && mkdir /tmp/compiled
-          actool --compile /tmp/compiled --platform iphoneos --minimum-deployment-target 14.0 $GITHUB_WORKSPACE/ios/Assets.xcassets
+          actool --compile /tmp/compiled \
+            --platform iphoneos \
+            --minimum-deployment-target 14.0 \
+            --target-device iphone --target-device ipad \
+            --app-icon AppIcon \
+            --output-partial-info-plist /tmp/compiled/partial.plist \
+            $GITHUB_WORKSPACE/ios/Assets.xcassets
+          echo "=== compiled ==="
           find /tmp/compiled -type f
-      - name: Inject Assets.car
+          echo "=== partial plist ==="
+          cat /tmp/compiled/partial.plist
+      - name: Replace loose icons + Assets.car
         run: |
-          echo "=== /tmp/compiled tree ==="
-          find /tmp/compiled
-          CAR=$(find /tmp/compiled -name "*.car" | head -1)
-          echo "CAR=$CAR"
-          if [ -z "$CAR" ]; then
-            echo "NO CAR FOUND - creating empty marker"
-            touch /tmp/ipa/Payload/App.app/NO_CAR
-          else
-            cp "$CAR" /tmp/ipa/Payload/App.app/Assets.car
-            ls -la /tmp/ipa/Payload/App.app/Assets.car
-          fi
-        shell: bash
+          APP=/tmp/ipa/Payload/App.app
+          ICONS=$GITHUB_WORKSPACE/ios/Assets.xcassets/AppIcon.appiconset
+          cp /tmp/compiled/Assets.car "$APP/Assets.car"
+          cp "$ICONS/icon-120a.png" "$APP/AppIcon60x60@2x.png"
+          cp "$ICONS/icon-152.png" "$APP/AppIcon76x76@2x~ipad.png"
+          echo "=== app icons ==="
+          ls -la "$APP"/Assets.car "$APP"/AppIcon*.png
       - name: Rebuild IPA
         run: cd /tmp/ipa && zip -r $GITHUB_WORKSPACE/MaTournee-Renaissance.ipa Payload
       - name: Upload IPA
