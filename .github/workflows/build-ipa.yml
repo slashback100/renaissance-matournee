@@ -32,9 +32,11 @@ jobs:
           find /tmp/compiled -type f
       - name: Inject Assets.car
         run: |
+          echo "=== /tmp/compiled tree ==="
+          find /tmp/compiled
           CAR=$(find /tmp/compiled -name "*.car" | head -1)
-          echo "Found car: $CAR"
-          test -n "$CAR"
+          echo "CAR=$CAR"
+          if [ -z "$CAR" ]; then echo "No .car found"; exit 1; fi
           cp "$CAR" /tmp/ipa/Payload/App.app/Assets.car
           ls -la /tmp/ipa/Payload/App.app/Assets.car
       - name: Rebuild IPA
