@@ -1,0 +1,32 @@
+name: Build IPA with new icon
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract base IPA
+        run: |
+          rm -rf /tmp/ipa && mkdir /tmp/ipa
+          cd /tmp/ipa && unzip -q $GITHUB_WORKSPACE/base.ipa
+      - name: Replace web app
+        run: |
+          rm -rf /tmp/ipa/Payload/App.app/public
+          cp -r $GITHUB_WORKSPACE/www /tmp/ipa/Payload/App.app/public
+      - name: Update Info.plist
+        run: |
+          cd /tmp/ipa/Payload/App.app
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Ma tournée" Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier be.vbrenaissance.matournee" Info.plist
+      - name: Compile Assets.car
+        run: |
+          actool --compile /tmp/compiled --platform iphoneos --minimum-deployment-target 14.0 ios/Assets.xcassets
+          cp /tmp/compiled/Assets.car /tmp/ipa/Payload/App.app/Assets.car
+      - name: Rebuild IPA
+        run: |
+          cd /tmp/ipa && zip -r $GITHUB_WORKSPACE/MaTournee-Renaissance.ipa Payload
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaTournee-Renaissance-ipa
+          path: MaTournee-Renaissance.ipa

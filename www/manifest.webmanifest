@@ -1,0 +1,19 @@
+{
+  "name": "VB Renaissance – Ma tournée",
+  "short_name": "Ma tournée",
+  "description": "Prise de commandes locale pour la buvette du VB Renaissance",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f6ee",
+  "theme_color": "#1f4d2a",
+  "lang": "fr-BE",
+  "icons": [
+    {
+      "src": "assets/logo-vb-renaissance.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
