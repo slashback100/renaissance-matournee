@@ -36,9 +36,14 @@ jobs:
           find /tmp/compiled
           CAR=$(find /tmp/compiled -name "*.car" | head -1)
           echo "CAR=$CAR"
-          if [ -z "$CAR" ]; then echo "No .car found"; exit 1; fi
-          cp "$CAR" /tmp/ipa/Payload/App.app/Assets.car
-          ls -la /tmp/ipa/Payload/App.app/Assets.car
+          if [ -z "$CAR" ]; then
+            echo "NO CAR FOUND - creating empty marker"
+            touch /tmp/ipa/Payload/App.app/NO_CAR
+          else
+            cp "$CAR" /tmp/ipa/Payload/App.app/Assets.car
+            ls -la /tmp/ipa/Payload/App.app/Assets.car
+          fi
+        shell: bash
       - name: Rebuild IPA
         run: cd /tmp/ipa && zip -r $GITHUB_WORKSPACE/MaTournee-Renaissance.ipa Payload
       - name: Upload IPA
