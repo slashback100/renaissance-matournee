@@ -5,10 +5,17 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      - name: Check tools
+        run: |
+          which actool
+          actool --version
       - name: Extract base IPA
         run: |
           rm -rf /tmp/ipa && mkdir /tmp/ipa
           cd /tmp/ipa && unzip -q $GITHUB_WORKSPACE/base.ipa
+          ls /tmp/ipa/Payload/App.app
       - name: Replace web app
         run: |
           rm -rf /tmp/ipa/Payload/App.app/public
@@ -16,15 +23,17 @@ jobs:
       - name: Update Info.plist
         run: |
           cd /tmp/ipa/Payload/App.app
-          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Ma tournée" Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier be.vbrenaissance.matournee" Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Ma tournée" Info.plist || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier be.vbrenaissance.matournee" Info.plist || true
       - name: Compile Assets.car
         run: |
-          actool --compile /tmp/compiled --platform iphoneos --minimum-deployment-target 14.0 ios/Assets.xcassets
-          cp /tmp/compiled/Assets.car /tmp/ipa/Payload/App.app/Assets.car
+          rm -rf /tmp/compiled && mkdir /tmp/compiled
+          actool --compile /tmp/compiled --platform iphoneos --minimum-deployment-target 14.0 $GITHUB_WORKSPACE/ios/Assets.xcassets
+          ls -la /tmp/compiled
+      - name: Inject Assets.car
+        run: cp /tmp/compiled/Assets.car /tmp/ipa/Payload/App.app/Assets.car
       - name: Rebuild IPA
-        run: |
-          cd /tmp/ipa && zip -r $GITHUB_WORKSPACE/MaTournee-Renaissance.ipa Payload
+        run: cd /tmp/ipa && zip -r $GITHUB_WORKSPACE/MaTournee-Renaissance.ipa Payload
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
