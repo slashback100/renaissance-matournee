@@ -29,9 +29,14 @@ jobs:
         run: |
           rm -rf /tmp/compiled && mkdir /tmp/compiled
           actool --compile /tmp/compiled --platform iphoneos --minimum-deployment-target 14.0 $GITHUB_WORKSPACE/ios/Assets.xcassets
-          ls -la /tmp/compiled
+          find /tmp/compiled -type f
       - name: Inject Assets.car
-        run: cp /tmp/compiled/Assets.car /tmp/ipa/Payload/App.app/Assets.car
+        run: |
+          CAR=$(find /tmp/compiled -name "*.car" | head -1)
+          echo "Found car: $CAR"
+          test -n "$CAR"
+          cp "$CAR" /tmp/ipa/Payload/App.app/Assets.car
+          ls -la /tmp/ipa/Payload/App.app/Assets.car
       - name: Rebuild IPA
         run: cd /tmp/ipa && zip -r $GITHUB_WORKSPACE/MaTournee-Renaissance.ipa Payload
       - name: Upload IPA
